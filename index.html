@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>信封</title>
+<meta name="description" content="用一张 A4 印 QSL 信封。填写地址，立体预览，按实际大小打印后裁剪粘贴。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <div class="hd">
+    <div class="brand"><span class="t">信封</span></div>
+    <div class="hd-actions">
+      <button type="button" class="ic" id="theme" title="切换深色" aria-label="切换深色">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 14.6a1 1 0 0 1 1 1V20a1 1 0 1 1-2 0v-1.4a1 1 0 0 1 1-1ZM4 11a1 1 0 1 0 0 2h1.2a1 1 0 1 0 0-2H4Zm14.6 0a1 1 0 1 0 0 2H20a1 1 0 1 0 0-2h-1.4ZM6.1 5.4a1 1 0 0 1 1.4 0l.9.9a1 1 0 1 1-1.4 1.4l-.9-.9a1 1 0 0 1 0-1.4Zm9.5 9.5a1 1 0 0 1 1.4 0l.9.9a1 1 0 0 1-1.4 1.4l-.9-.9a1 1 0 0 1 0-1.4ZM17 6.8a1 1 0 0 1-1.4-1.4l.9-.9a1 1 0 1 1 1.4 1.4l-.9.9ZM7.5 16.3a1 1 0 0 1-1.4-1.4l.9-.9a1 1 0 1 1 1.4 1.4l-.9.9ZM12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2Z"/></svg>
+      </button>
+      <div class="viewseg" id="views">
+        <button type="button" data-view="edit" class="on">平面</button>
+        <button type="button" data-view="sheet">裁切</button>
+      </div>
+      <button type="button" class="btn pri" id="do-print">打印</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <form class="panel" id="form" autocomplete="off">
+    <div class="panel-tabs" id="panel-tabs">
+      <div class="switch" role="tablist">
+        <button type="button" data-tab="send" class="on" role="tab">寄送</button>
+        <button type="button" data-tab="make" role="tab">信封</button>
+      </div>
+    </div>
+
+    <div class="pane" data-panel="send">
+      <div class="seg kindseg" role="radiogroup" aria-label="版式">
+        <label><input type="radio" name="kind" value="air" checked><span>国际航空</span></label>
+        <label><input type="radio" name="kind" value="surface"><span>国际水陆</span></label>
+        <label><input type="radio" name="kind" value="domestic"><span>国内</span></label>
+      </div>
+      <section class="card" id="sender-card">
+        <button type="button" class="card-h" id="sender-toggle" aria-expanded="false">
+          <span class="card-copy">
+            <b id="sender-title">寄件人</b>
+            <small id="sender-sum">国内和国际各记一份</small>
+          </span>
+          <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10l4-3.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="card-b">
+          <div class="grid2">
+            <label class="field"><span>姓名 / 呼号</span><input id="from-name" autocomplete="name" placeholder="BG5CRL"></label>
+            <label class="field"><span id="from-phone-label">电话</span><input id="from-phone" inputmode="tel" autocomplete="tel" placeholder="手机号"></label>
+            <label class="field span2"><span>地址</span><textarea id="from-addr" rows="2" placeholder="一行一条"></textarea></label>
+            <label class="field dom span2"><span>邮政编码</span><input id="from-post" inputmode="numeric" maxlength="6" placeholder="6 位"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h bar">
+          <span class="card-copy">
+            <b>收件人</b>
+            <small id="recv-sum">还没有</small>
+          </span>
+          <button type="button" class="textbtn" id="person-all">全选</button>
+        </div>
+        <div class="card-b show">
+          <div id="people" class="people"></div>
+          <button type="button" class="addrow" id="person-add">添加收件人</button>
+        </div>
+      </section>
+      <section class="card">
+        <div class="blank-row">
+          <span class="card-copy">
+            <b>手写空信封</b>
+            <small>不印姓名、电话和地址，留着笔写</small>
+          </span>
+          <label class="step"><input id="blank-count" type="number" min="0" max="50" value="0" inputmode="numeric" aria-label="手写空信封张数"><span>张</span></label>
+        </div>
+      </section>
+      <div id="editor-hold" hidden>
+        <div id="person-edit" class="editor">
+          <div class="grid2">
+            <label class="field"><span>姓名 / 呼号</span><input id="to-name" autocomplete="name" placeholder="JA1ABC"></label>
+            <label class="field"><span id="to-phone-label">电话</span><input id="to-phone" inputmode="tel" autocomplete="tel" placeholder="手机号"></label>
+            <label class="field span2"><span>地址</span><textarea id="to-addr" rows="3" placeholder="一行一条"></textarea></label>
+            <label class="field intl span2"><span>国家 / 地区</span><input id="to-country" placeholder="JAPAN"></label>
+            <label class="field dom span2"><span>邮政编码</span><input id="to-post" inputmode="numeric" maxlength="6" placeholder="6 位"></label>
+          </div>
+          <button type="button" class="link" id="person-del">删除这个人</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" data-panel="make" hidden>
+      <section class="card">
+        <div class="card-h bar"><span class="card-copy"><b>哪一只</b><small>空白和 CRL 是预设，不能删</small></span></div>
+        <div class="card-b show">
+          <label class="field"><span>当前</span><select id="env-pick"></select></label>
+          <label class="field"><span>名称</span><input id="env-name" autocomplete="off"></label>
+          <div class="row-actions">
+            <button type="button" class="btn alt" id="env-new">新建</button>
+            <button type="button" class="btn alt" id="env-copy">复制</button>
+            <button type="button" class="btn alt" id="env-del">删除</button>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="card-h bar"><span class="card-copy"><b>加在信封上</b><small>在右边拖，圆点改大小</small></span></div>
+        <div class="card-b show">
+          <div class="row-actions">
+            <button type="button" class="btn alt" id="add-text">加文字</button>
+            <button type="button" class="btn alt" id="add-img-btn">加图片</button>
+            <input type="file" accept="image/*" id="add-img" hidden>
+          </div>
+          <div id="piece-tools" hidden>
+            <label class="field" id="piece-text-wrap"><span>这段文字</span><textarea id="piece-text" rows="3"></textarea></label>
+            <label class="field" id="piece-size-wrap"><span>字号</span><input type="range" id="piece-size" min="2" max="10" step="0.1" value="3.6"></label>
+            <button type="button" class="link" id="piece-del">删除这条</button>
+          </div>
+        </div>
+      </section>
+      <p class="print-note">缩放 100%，边距选「无」。一次印多只时，每张纸一只。</p>
+    </div>
+  </form>
+
+  <section class="stage-wrap">
+    <div id="stage" class="stage" hidden>
+      <div class="rig" id="rig">
+        <div class="shadow"></div>
+        <div class="env">
+          <div class="panel back" id="d-back"></div>
+          <div class="panel front" id="d-front"></div>
+          <div class="flap3" id="d-flap">
+            <div class="leaf out" id="d-flap-out"></div>
+            <div class="leaf inn"></div>
+          </div>
+        </div>
+      </div>
+      <p class="stage-hint">拖动旋转</p>
+    </div>
+    <div id="edit-stage" class="edit-stage">
+      <div class="edit-bar">
+        <div class="viewseg" id="face-tabs">
+          <button type="button" data-face="flap">舌页</button>
+          <button type="button" data-face="front" class="on">正面</button>
+          <button type="button" data-face="back">背面</button>
+        </div>
+        <p class="edit-hint">拖动放置，圆点改大小</p>
+      </div>
+      <div id="edit-scroll" class="edit-scroll">
+        <div id="edit-sheet" class="edit-sheet"></div>
+      </div>
+    </div>
+    <div id="sheet-slot" class="sheet-slot" hidden></div>
+    <div class="stage-bar" hidden>
+      <label class="flap-ctl">封舌 <input type="range" id="flap" min="0" max="100" value="28"></label>
+      <button type="button" class="btn alt" id="see-front">看正面</button>
+      <button type="button" class="btn alt" id="see-back">看背面</button>
+    </div>
+  </section>
+</div>
+
+<div id="print-root" aria-hidden="true"></div>
+<script src="app.js"></script>
+</body>
+</html>
